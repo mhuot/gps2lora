@@ -10,9 +10,11 @@
 #include <RH_RF95.h>
 #include <Adafruit_GPS.h>
 
-HardwareSerial* mySerial = &Serial1;
-Adafruit_GPS GPS(mySerial);
+#define GPSSerial Serial1
+Adafruit_GPS GPS(&GPSSerial);
 
+// This timer is for the GPS readings.  Don't mess with it.
+uint32_t timer = millis();
 
 /* for feather m0  */
 #define RFM95_CS 8
@@ -54,12 +56,16 @@ void setup()
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
 
+  // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
+  
+  // Turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  
+  // Set the update rate
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-  GPS.sendCommand(PGCMD_ANTENNA);
+  
   delay(1000);
-  mySerial->println(PMTK_Q_RELEASE);
 }
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
@@ -67,20 +73,34 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 void loop()
 {
 
-  GPS.read();
+  // read data from the GPS in the 'main loop'
+  char c = GPS.read();
+    // if a sentence is received, we can check the checksum, parse it...
   if (GPS.newNMEAreceived()) {
-    if (!GPS.parse(GPS.lastNMEA()))
-      return;
+    // a tricky thing here is if we print the NMEA sentence, or data
+    // we end up not listening and catching other sentences!
+    // so be very wary if using OUTPUT_ALLDATA and trytng to print out data
+    if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
+      return; // we can fail to parse a sentence in which case we should just wait for another
   }
+  // if millis() or timer wraps around, we'll just reset it
+  if (timer > millis()) timer = millis();
 
-  if (GPS.fix) {
+   // approximately every 2 seconds or so, print out the current stats
+  if (millis() - timer > 2000) {
+    timer = millis(); // reset the timer
+
+    packetnum++;
+    String packet = String(packetnum);
     String latdegrees = String(GPS.latitudeDegrees, 4);
     String longdegrees = String(GPS.longitudeDegrees, 4);
     String gpshour = String(GPS.hour);
     String gpsminute = String(GPS.minute);
     String gpsseconds = String(GPS.seconds);
+    String gpssatellites = String(GPS.satellites);
     String gpsquality = String(GPS.fixquality);
-    String message = String("Location " + latdegrees + " " + longdegrees + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " quality " + gpsquality);
+    String rssi = String(rf95.lastRssi(), DEC);
+    String message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
     int message_len = message.length() + 1;
 
     char radiopacket[message_len];
