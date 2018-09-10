@@ -1,5 +1,6 @@
 # lora2gps
 
+# Not working RPi wiring
 | Board Label |  Board pin  |  Jumper Color | RPi Pin | Rpi Label | Note     |
 |-------|-------|--------|-----|-------|-------|
 | 3v | 1 | red | 17	| |		
