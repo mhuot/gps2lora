@@ -10,11 +10,6 @@
 #include <RH_RF95.h>
 #include <Adafruit_GPS.h>
 
-<<<<<<< HEAD
-HardwareSerial* mySerial = &Serial1;
-Adafruit_GPS GPS(mySerial);
-
-=======
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
