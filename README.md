@@ -36,6 +36,8 @@ I am trying to see if I can build a GPS-based tracking system that leverages LoR
 |         rst |           9 |         white |           2 |     Digital 2 | 
 
 # Resources
-https://www.hackster.io/idreams/getting-started-with-lora-fd69d1
-http://www.airspayce.com/mikem/arduino/RadioHead/
+* https://www.hackster.io/idreams/getting-started-with-lora-fd69d1
+* http://www.airspayce.com/mikem/arduino/RadioHead/
+* https://www.youtube.com/watch?v=a1wYgQDYhPE
+* https://developers.google.com/kml/documentation/kmlreference#placemark
 
