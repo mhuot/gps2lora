@@ -1,4 +1,13 @@
-# lora2gps
+# gps2lora
+I am trying to see if I can build a GPS-based tracking system that leverages LoRa. The initial setup that is working uses a Adafruit Feather M0 with RFM95 LoRa Radio and an Adafruit Ultimate GPS FeatherWing as the transmitter. talking to an Adafruit RFM95W LoRa Radio Transceiver Breakout connected va SPI to an Arduino Duemilanove which is in turn connected via USB to a Raspberry Pi Zero as the receiver. I am seeing with just a wire antenna(7.8 cm soldered to the ANT pad) on the receiver for LoRa seeing a range of 90+ meters semi-obstructed.
+
+# Parts List
+Adafruit Ultimate GPS FeatherWing
+Adafruit Feather M0 with RFM95 LoRa Radio - 900MHz
+Adafruit RFM95W LoRa Radio Transceiver Breakout - 868 or 915 MHz - RadioFruit
+Antennas GPS Antenna 3-5V 28dB 5 meter SMA
+Arduino Duemilanove
+Rasberry Pi Zero
 
 # Not working RPi wiring
 | Board Label |  Board pin  |  Jumper Color | RPi Pin | Rpi Label | Note     |
@@ -25,3 +34,8 @@
 |        mosi |           7 |        orange |          11 |    Digital 11 |		
 |          cs |           8 |          blue |           4 |     Digital 4 | 
 |         rst |           9 |         white |           2 |     Digital 2 | 
+
+# Resources
+https://www.hackster.io/idreams/getting-started-with-lora-fd69d1
+http://www.airspayce.com/mikem/arduino/RadioHead/
+
