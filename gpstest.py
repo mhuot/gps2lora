@@ -10,9 +10,9 @@ while True:
 	if match:
 		lat = float(match.group(3))
 		lon = float(match.group(4))
+		name = "%s-%s-%s" % (match.group(2), match.group(1), match.group(5))
 
-		print "lat:%f" % lat
-		print "long:%f" % lon
+		print "%f, %f, %s" % (lat, lon, name)
 
 		with open ("position.kml", "w") as pos:
 			pos.write('''<?xml version="1.0" encoding="UTF-8"?>
