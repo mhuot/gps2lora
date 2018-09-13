@@ -87,7 +87,7 @@ void loop()
   if (timer > millis()) timer = millis();
 
    // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 2000) {
+  if (millis() - timer > 3000) {
     timer = millis(); // reset the timer
 
     packetnum++;
@@ -100,7 +100,8 @@ void loop()
     String gpssatellites = String(GPS.satellites);
     String gpsquality = String(GPS.fixquality);
     String rssi = String(rf95.lastRssi(), DEC);
-    String message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+    String gpsalt = String(GPS.altitude);
+    String message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
     int message_len = message.length() + 1;
 
     char radiopacket[message_len];

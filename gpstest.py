@@ -6,13 +6,14 @@ gps = serial.Serial("/dev/tty.usbserial-A700fiJM", baudrate=115200)
 
 while True:
 	line = gps.readline()
-	match = re.search(r'Got: Packet - (\d+) RSSI (-\d+) Location (\d+\.\d+) (-\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', line)
+	match = re.search(r'Got: Packet - (\d+) RSSI (-\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', line)
 	if match:
 		lat = float(match.group(3))
 		lon = float(match.group(4))
-		name = "%s-%s-%s" % (match.group(2), match.group(1), match.group(5))
+		alt = float(match.group(5))
+		name = "%s-%s-%s" % (match.group(2), match.group(1), match.group(6))
 
-		print "%f, %f, %s" % (lat, lon, name)
+		print "%f, %f, %f, %s" % (lat, lon, alt, name)
 
 		with open ("position.kml", "w") as pos:
 			pos.write('''<?xml version="1.0" encoding="UTF-8"?>
@@ -22,8 +23,9 @@ while True:
   <name>Python Live GPS</name>
   <description>Hello World</description>
   <Point>
-    <coordinates>%f,%f</coordinates>
+    <coordinates>%f,%f,%f</coordinates>
   </Point>
 </Placemark>
 </kml>
-'''  % (lon, lat))
+'''  % (lon, lat, alt))
+

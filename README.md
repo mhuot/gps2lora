@@ -43,3 +43,12 @@ I am trying to see if I can build a GPS-based tracking system that leverages LoR
 * https://www.youtube.com/watch?v=a1wYgQDYhPE
 * https://developers.google.com/kml/documentation/kmlreference#placemark
 
+# Similar Project
+| Link to Project | Hardware | Software |
+|-----------------|----------|----------|
+| https://www.hackster.io/Amedee/the-things-network-node-for-ttnmapper-with-gps-231ea1 | | |
+| http://doorinthewall.co.za/blog/lora-gps-trackers/ | | |
+| https://hackaday.io/project/13013-off-grid-gps-race-tracker-client-and-server | | Traccar server + Tilestache map tile server + Maperitive-produced OpenStreetmap .MB map tiles + traccar-web client portal + flask for grabbing some client portal features |
+| https://github.com/robertsmarty/adafruit3078gps | | AWS DynamoDB + AWS Lambda + Google maps |
+| https://www.thethingsnetwork.org/labs/story/gps-tracker | | TTN with InfluxDB + Grafana for maps |
+
