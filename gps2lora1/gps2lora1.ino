@@ -1,11 +1,3 @@
-// Feather9x_TX
-// -*- mode: C++ -*-
-// Example sketch showing how to create a simple messaging client (transmitter)
-// with the RH_RF95 class. RH_RF95 class does not provide for addressing or
-// reliability, so you should only use RH_RF95 if you do not need the higher
-// level messaging abilities.
-// It is designed to work with the other example Feather9x_RX
-
 #include <SPI.h>
 #include <RH_RF95.h>
 #include <Adafruit_GPS.h>
@@ -13,6 +5,7 @@
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
+#define PMTK_SET_NMEA_UPDATE_10SEC "$PMTK220,10000*2F"
 // This timer is for the GPS readings.  Don't mess with it.
 uint32_t timer = millis();
 
@@ -29,6 +22,8 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 void setup()
 {
+  Serial.begin(9600);
+  Serial.println("GPS echo test");
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
 
@@ -58,13 +53,13 @@ void setup()
 
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
-  
+
   // Turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  
+
   // Set the update rate
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-  
+
   delay(1000);
 }
 
@@ -75,7 +70,7 @@ void loop()
 
   // read data from the GPS in the 'main loop'
   char c = GPS.read();
-    // if a sentence is received, we can check the checksum, parse it...
+  // if a sentence is received, we can check the checksum, parse it...
   if (GPS.newNMEAreceived()) {
     // a tricky thing here is if we print the NMEA sentence, or data
     // we end up not listening and catching other sentences!
@@ -86,7 +81,7 @@ void loop()
   // if millis() or timer wraps around, we'll just reset it
   if (timer > millis()) timer = millis();
 
-   // approximately every 2 seconds or so, print out the current stats
+  // approximately every 2 seconds or so, print out the current stats
   if (millis() - timer > 3000) {
     timer = millis(); // reset the timer
 
@@ -101,12 +96,18 @@ void loop()
     String gpsquality = String(GPS.fixquality);
     String rssi = String(rf95.lastRssi(), DEC);
     String gpsalt = String(GPS.altitude);
-    String message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+    String message = String("No fix");
+
+    if (GPS.fix) {
+      message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+    }
+
+    Serial.println(message);
+
     int message_len = message.length() + 1;
 
     char radiopacket[message_len];
     message.toCharArray(radiopacket, message_len);
-
     delay(10);
     rf95.send((uint8_t *)radiopacket, message_len);
 
