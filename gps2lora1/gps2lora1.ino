@@ -1,6 +1,20 @@
 #include <SPI.h>
 #include <RH_RF95.h>
 #include <Adafruit_GPS.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+Adafruit_SSD1306 display = Adafruit_SSD1306();
+
+#define BUTTON_A 9 //OLED
+#define BUTTON_B 6 //OLED
+#define BUTTON_C 5 //OLED
+#define LED      13 //OLED
+
+#if (SSD1306_LCDHEIGHT != 32)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
 
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
@@ -23,9 +37,13 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 void setup()
 {
   Serial.begin(9600);
-  Serial.println("GPS echo test");
+
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
+
+  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
+  display.display();
 
   delay(100);
 
@@ -61,9 +79,26 @@ void setup()
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
 
   delay(1000);
+
+  // Clear the buffer.
+  display.clearDisplay();
+  display.display();
+
+  pinMode(BUTTON_A, INPUT_PULLUP);
+  pinMode(BUTTON_B, INPUT_PULLUP);
+  pinMode(BUTTON_C, INPUT_PULLUP);
+  // text display tests
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.println("gps2lora is ready");
+  display.setCursor(0, 0);
+  display.display(); // actually display all of the above
+
 }
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
+int16_t fixattempt = 0;
 
 void loop()
 {
@@ -86,6 +121,7 @@ void loop()
     timer = millis(); // reset the timer
 
     packetnum++;
+    fixattempt++;
     String packet = String(packetnum);
     String latdegrees = String(GPS.latitudeDegrees, 4);
     String longdegrees = String(GPS.longitudeDegrees, 4);
@@ -97,9 +133,12 @@ void loop()
     String rssi = String(rf95.lastRssi(), DEC);
     String gpsalt = String(GPS.altitude);
     String message = String("No fix");
+    String displaytext = String("No GPS fix\nFail #" + fixattempt);
 
     if (GPS.fix) {
       message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+      fixattempt = 0;
+      displaytext = String("Sending packet " + packet + "\nLocation is " + latdegrees + " " + longdegrees + " " + gpsalt + "\nSatellites - " + gpssatellites);
     }
 
     Serial.println(message);
@@ -120,5 +159,14 @@ void loop()
     if (rf95.waitAvailableTimeout(1000)) {
       delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
     }
+    display.clearDisplay();
+
+    // text display tests
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.println(displaytext);
+    display.setCursor(0, 0);
+    display.display();
   }
 }
