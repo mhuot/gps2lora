@@ -94,6 +94,7 @@ void setup()
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int16_t fixattempt = 0;
+bool screen1 = true;
 
 void loop()
 {
@@ -131,9 +132,15 @@ void loop()
     String displaytext = String("No GPS Fail " + String(fixattempt));
 
     if (GPS.fix) {
-      message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+      message = String("NODE1 - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
       fixattempt = 0;
-      displaytext = String("Sending packet " + packet + "\nLocation is " + latdegrees + " " + longdegrees + " " + gpsalt + "\nSatellites - " + gpssatellites);
+      if (screen1) {
+        displaytext = String("NODE1 packet " + packet + "\nLoc " + latdegrees + " " + longdegrees + "\nAlt " + gpsalt + "m");
+        screen1 = false;
+      } else {
+        displaytext = String("NODE1 packet " + packet + "\nSatellites " + gpssatellites + "\nRSSI " + rssi + " dBm");
+        screen1 = true;
+      }
     }
 
     Serial.println(message);
