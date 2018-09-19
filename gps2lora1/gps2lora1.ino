@@ -4,8 +4,9 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_FeatherOLED.h>
 
-Adafruit_SSD1306 display = Adafruit_SSD1306();
+Adafruit_FeatherOLED oled = Adafruit_FeatherOLED();
 
 #define BUTTON_A 9 //OLED
 #define BUTTON_B 6 //OLED
@@ -42,8 +43,8 @@ void setup()
   digitalWrite(RFM95_RST, HIGH);
 
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
-  display.display();
+  //  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
+  //  display.display();
 
   delay(100);
 
@@ -80,20 +81,14 @@ void setup()
 
   delay(1000);
 
-  // Clear the buffer.
-  display.clearDisplay();
-  display.display();
-
   pinMode(BUTTON_A, INPUT_PULLUP);
   pinMode(BUTTON_B, INPUT_PULLUP);
   pinMode(BUTTON_C, INPUT_PULLUP);
-  // text display tests
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.println("gps2lora is ready");
-  display.setCursor(0, 0);
-  display.display(); // actually display all of the above
+
+  oled.init();
+  oled.setBatteryVisible(true);
+  oled.println("gps2lora is ready");
+  oled.display(); // actually display all of the above
 
 }
 
@@ -133,7 +128,7 @@ void loop()
     String rssi = String(rf95.lastRssi(), DEC);
     String gpsalt = String(GPS.altitude);
     String message = String("No fix");
-    String displaytext = String("No GPS fix\nFail #" + fixattempt);
+    String displaytext = String("No GPS Fail " + String(fixattempt));
 
     if (GPS.fix) {
       message = String("Packet - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
@@ -159,14 +154,80 @@ void loop()
     if (rf95.waitAvailableTimeout(1000)) {
       delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
     }
-    display.clearDisplay();
+    oled.clearDisplay();
 
-    // text display tests
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    display.println(displaytext);
-    display.setCursor(0, 0);
-    display.display();
+    // get the current voltage of the battery from
+    // one of the platform specific functions below
+    float battery = getBatteryVoltage();
+
+    // update the battery icon
+    oled.setBattery(battery);
+    oled.renderBattery();
+
+    oled.println(displaytext);
+    oled.display();
   }
 }
+
+#if defined(ARDUINO_ARCH_SAMD) || defined(__AVR_ATmega32U4__)
+
+// m0 & 32u4 feathers
+#define VBATPIN A7
+
+float getBatteryVoltage() {
+
+  float measuredvbat = analogRead(VBATPIN);
+
+  measuredvbat *= 2;    // we divided by 2, so multiply back
+  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+
+  return measuredvbat;
+
+}
+
+#elif defined(ESP8266)
+
+// esp8266 feather
+#define VBATPIN A0
+
+float getBatteryVoltage() {
+
+  float measuredvbat = analogRead(VBATPIN);
+
+  measuredvbat *= 2;    // we divided by 2, so multiply back
+  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+
+  return measuredvbat;
+
+}
+
+#elif defined(ARDUINO_STM32_FEATHER)
+
+// wiced feather
+#define VBATPIN PA1
+
+float getBatteryVoltage() {
+
+  pinMode(VBATPIN, INPUT_ANALOG);
+
+  float measuredvbat = analogRead(VBATPIN);
+
+  measuredvbat *= 2;         // we divided by 2, so multiply back
+  measuredvbat *= 0.80566F;  // multiply by mV per LSB
+  measuredvbat /= 1000;      // convert to voltage
+
+  return measuredvbat;
+
+}
+
+#else
+
+// unknown platform
+float getBatteryVoltage() {
+  Serial.println("warning: unknown feather. getting battery voltage failed.");
+  return 0.0F;
+}
+
+#endif
