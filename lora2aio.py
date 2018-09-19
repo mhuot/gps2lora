@@ -42,6 +42,12 @@ except RequestError: # Doesn't exist, create a new feed
     feed = Feed(name="location")
     location = aio.create_feed(feed)
 
+# Assign a rssi feed, if one exists already
+try:
+    rssifeed = aio.feeds('rssi')
+except RequestError: # Doesn't exist, create a new feed
+    rssifeed = aio.create_feed(Feed(name='rssi'))
+
 while True:
     line = gps.readline()
     match = re.search(r'Got: (NODE\d) - (\d+) RSSI (-\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', line)
@@ -49,12 +55,14 @@ while True:
         lat = float(match.group(4))
         lon = float(match.group(5))
         alt = float(match.group(6))
-        name = "%s-%s-%s" % (match.group(3), match.group(2), match.group(7))
+        rssi = march.group(3)
+        name = "%s-%s-%s" % (rssi, match.group(2), match.group(7))
 
         print "%f, %f, %f, %s" % (lat, lon, alt, name)
 
         # Send location data to Adafruit IO
         aio.send_location_data(location.key, name, lat, lon, alt)
+        aio.send(rssifeed.key, rssi)
 
         # Read the location data back from IO
         print('\nData Received by Adafruit IO Feed:\n')
