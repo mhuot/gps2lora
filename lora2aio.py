@@ -50,12 +50,12 @@ except RequestError: # Doesn't exist, create a new feed
 
 while True:
     line = gps.readline()
-    match = re.search(r'Got: (NODE\d) - (\d+) RSSI (-\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', line)
+    match = re.search(r'Got: (NODE\d) (\d+) RSSI (-\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', line)
     if match:
         lat = float(match.group(4))
         lon = float(match.group(5))
         alt = float(match.group(6))
-        rssi = march.group(3)
+        rssi = match.group(3)
         name = "%s-%s-%s" % (rssi, match.group(2), match.group(7))
 
         print "%f, %f, %f, %s" % (lat, lon, alt, name)
