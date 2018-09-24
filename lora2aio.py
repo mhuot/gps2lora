@@ -10,25 +10,25 @@ from Adafruit_IO import Client, Feed, RequestError
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
 if 'AIOKEY' in os.environ:
-	ADAFRUIT_IO_KEY = os.environ['AIOKEY']
+    ADAFRUIT_IO_KEY = os.environ['AIOKEY']
 else:
-	print("AIOKEY is not set")
-	ADAFRUIT_IO_KEY = raw_input("Please provide an Adafruit IO Key: ")
+    print("AIOKEY is not set")
+    ADAFRUIT_IO_KEY = raw_input("Please provide an Adafruit IO Key: ")
 
 
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
 if 'AIOUSER' in os.environ:
-	ADAFRUIT_IO_USERNAME = os.environ['AIOUSER']
+    ADAFRUIT_IO_USERNAME = os.environ['AIOUSER']
 else:
-	print("AIOUSER is not set")
-	ADAFRUIT_IO_USERNAME = raw_input("Please provide an Adafruit user name: ")
+    print("AIOUSER is not set")
+    ADAFRUIT_IO_USERNAME = raw_input("Please provide an Adafruit user name: ")
 
 if 'GPSSERIAL' in os.environ:
-	GPSSERIAL = os.environ['GPSSERIAL']
+    GPSSERIAL = os.environ['GPSSERIAL']
 else:
-	print("GPSSERIAL is not set")
-	GPSSERIAL = raw_input("Please provide a serial device: ")
+    print("GPSSERIAL is not set")
+    GPSSERIAL = raw_input("Please provide a serial device: ")
 
 gps = serial.Serial(GPSSERIAL, baudrate=115200)
 
@@ -74,3 +74,5 @@ while True:
         if match:
             rssi = march.group(3)
             aio.send(rssifeed.key, rssi)
+            data = aio.receive(rssifeed.key)
+            print('\Rssi: {0}'.format(data.rssi))
