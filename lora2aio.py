@@ -69,3 +69,8 @@ while True:
         data = aio.receive(location.key)
         print('\tValue: {0}\n\tLat: {1}\n\tLon: {2}\n\tEle: {3}'
           .format(data.value, data.lat, data.lon, data.ele))
+    else:
+        match = re.search(r'Got: (NODE\d) - (\d+) RSSI (-\d+) GPS no fix', line)
+        if match:
+            rssi = march.group(3)
+            aio.send(rssifeed.key, rssi)

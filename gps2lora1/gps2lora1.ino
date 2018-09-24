@@ -113,11 +113,12 @@ void loop()
   if (timer > millis()) timer = millis();
 
   // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 3000) {
+  if (millis() - timer > 6000) {
     timer = millis(); // reset the timer
 
     packetnum++;
     fixattempt++;
+    String nodename = String("NODE1");
     String packet = String(packetnum);
     String latdegrees = String(GPS.latitudeDegrees, 4);
     String longdegrees = String(GPS.longitudeDegrees, 4);
@@ -128,17 +129,17 @@ void loop()
     String gpsquality = String(GPS.fixquality);
     String rssi = String(rf95.lastRssi(), DEC);
     String gpsalt = String(GPS.altitude);
-    String message = String("No fix");
-    String displaytext = String("No GPS Fail " + String(fixattempt));
+    String message = String(nodename + " GPS Fail " + String(fixattempt)+ " RSSI " + rssi);
+    String displaytext = message;
 
     if (GPS.fix) {
-      message = String("NODE1 - " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
+      message = String(nodename + " " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
       fixattempt = 0;
       if (screen1) {
-        displaytext = String("NODE1 packet " + packet + "\nLoc " + latdegrees + " " + longdegrees + "\nAlt " + gpsalt + "m");
+        displaytext = String(nodename + " packet " + packet + "\nLoc " + latdegrees + " " + longdegrees + "\nAlt " + gpsalt + "m");
         screen1 = false;
       } else {
-        displaytext = String("NODE1 packet " + packet + "\nSatellites " + gpssatellites + "\nRSSI " + rssi + " dBm");
+        displaytext = String(nodename + " packet " + packet + "\nSatellites " + gpssatellites + "\nRSSI " + rssi + " dBm");
         screen1 = true;
       }
     }
