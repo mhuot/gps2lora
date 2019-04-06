@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
 import os
 import re
@@ -74,29 +74,32 @@ prev_packet = None
 while True:
     packet = None
     # draw a box to clear the image
-    display.fill(0)
-    display.text('RasPi LoRa', 35, 0, 1)
+    #display.fill(0)
+    #display.text('RasPi LoRa', 35, 0, 1)
 
     # check for packet rx
     packet = rfm9x.receive()
     if packet is None:
-        display.show()
-        display.text('- Waiting for PKT -', 15, 20, 1)
+        #display.show()
+        #display.text('- Waiting for PKT -', 15, 20, 1)
+        #print("Waiting for packet")
+        m = 0
     else:
         # Display the packet text and rssi
         display.fill(0)
         prev_packet = packet
-        packet_text = str(prev_packet, "utf-8")
-        display.text('RX: ', 0, 0, 1)
-        display.text(packet_text, 25, 0, 1)
-        print(packet_text)
-        time.sleep(1)
-        match = re.search(r'(NODE\d) -?(\d+) RSSI (-\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', packet_text)
+        try: 
+            packet_text = str(prev_packet, "utf-8")
+        except:
+            print("failed to read packet string")
+        #print(packet_text)
+        time.sleep(3)
+        match = re.search(r'(NODE\d) -?(\d+) RSSI (-?\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', packet_text)
         if match:
             lat = float(match.group(4))
             lon = float(match.group(5))
             ele = float(match.group(6))
-            rssi = match.group(3)
+            rssi = rfm9x.rssi
             name = "%s-%s-%s" % (rssi, match.group(2), match.group(7))
             locdata = {
                 "lat" : lat,
@@ -107,19 +110,21 @@ while True:
 
             locjson = json.dumps(locdata)
 
-            print(locjson)
+            #print("RSSI: %s - %s" % (rssi,locjson))
 
+            display.text('RX: ', 0, 0, 1)
+            display.text("RSSI: %s" % rssi, 25, 0, 1)
             # Send location data to Adafruit IO
             aio.send(location.key, name, locdata)
             aio.send(rssifeed.key, rssi)
 
             # Read the location data back from IO
-            print('\nData Received by Adafruit IO Feed:\n')
-            data = aio.receive(location.key)
-            print('\tValue: {0}\n\tLat: {1}\n\tLon: {2}\n\tEle: {3}'
-              .format(data.value, data.lat, data.lon, data.ele))
+            #print('\nData Received by Adafruit IO Feed:\n')
+            #data = aio.receive(location.key)
+            #print('\tValue: {0}\n\tLat: {1}\n\tLon: {2}\n\tEle: {3}'
+            #  .format(data.value, data.lat, data.lon, data.ele))
         else:
-            match = re.search(r'Got: (NODE\d) - (\d+) RSSI (-\d+) GPS no fix', packet_text)
+            match = re.search(r'(NODE\d) - (\d+) RSSI (-\d+) GPS no fix', packet_text)
             if match:
                     rssi = march.group(3)
                     aio.send(rssifeed.key, rssi)
