@@ -17,24 +17,30 @@ import adafruit_rfm9x
 # Import Adafruit IO REST client.
 from Adafruit_IO import Client, Feed, RequestError
 
+homedir = os.path.expanduser('~')
+
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-if 'AIOKEY' in os.environ:
-    ADAFRUIT_IO_KEY = os.environ['AIOKEY']
-else:
-    print("AIOKEY is not set")
-    ADAFRUIT_IO_KEY = input("Please provide an Adafruit IO Key: ")
-
-
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-if 'AIOUSER' in os.environ:
+if 'AIOKEY' in os.environ and 'AIOUSER' in os.environ:
     ADAFRUIT_IO_USERNAME = os.environ['AIOUSER']
+    ADAFRUIT_IO_KEY = os.environ['AIOKEY']
 else:
-    print("AIOUSER is not set")
-    ADAFRUIT_IO_USERNAME = input("Please provide an Adafruit user name: ")
+    try:
+        aiojson = open('%s/.aio.json' % homedir)
+        aioinfo = json.load(aiojson)
+        print(aioinfo)
+        ADAFRUIT_IO_USERNAME = aioinfo['AIOUSER']
+        ADAFRUIT_IO_KEY = aioinfo['AIOKEY']
+    except:
+        print("AIOKEY is not set")
+        ADAFRUIT_IO_KEY = input("Please provide an Adafruit IO Key: ")
+        print("AIOUSER is not set")
+        ADAFRUIT_IO_USERNAME = input("Please provide an Adafruit user name: ")
 
+print('AIOKEY %s, AIOUSER %s' % ( ADAFRUIT_IO_KEY,  ADAFRUIT_IO_USERNAME ))
 
 # Create the I2C interface.
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -54,8 +60,7 @@ aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
 try:
     location = aio.feeds('location')
 except RequestError: # Doesn't exist, create a new feed
-    feed = Feed(name="location")
-    location = aio.create_feed(feed)
+    location = aio.create_feed(Feed(name="location"))
 
 # Assign a rssi feed, if one exists already
 try:
