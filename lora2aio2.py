@@ -44,7 +44,7 @@ print('AIOKEY %s, AIOUSER %s' % ( ADAFRUIT_IO_KEY,  ADAFRUIT_IO_USERNAME ))
 
 # Create the I2C interface.
 i2c = busio.I2C(board.SCL, board.SDA)
- 
+
 # 128x32 OLED Display
 display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
 # Clear the display.
@@ -68,6 +68,12 @@ try:
 except RequestError: # Doesn't exist, create a new feed
     rssifeed = aio.create_feed(Feed(name='rssi'))
 
+# Assign a rssi feed, if one exists already
+try:
+    satfeed = aio.feeds('satellites')
+except RequestError: # Doesn't exist, create a new feed
+    satfeed = aio.create_feed(Feed(name='satellites'))
+
 # Configure LoRa Radio
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
@@ -75,36 +81,52 @@ spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
 rfm9x.tx_power = 23
 prev_packet = None
+lastpacket = 0
+lpminutes = 1
+
+display.fill(0)
+display.text('RasPi LoRa', 35, 0, 1)
+display.show()
 
 while True:
     packet = None
     # draw a box to clear the image
-    #display.fill(0)
-    #display.text('RasPi LoRa', 35, 0, 1)
 
     # check for packet rx
     packet = rfm9x.receive()
     if packet is None:
         #display.show()
         #display.text('- Waiting for PKT -', 15, 20, 1)
-        #print("Waiting for packet")
-        m = 0
+        print("%s - Waiting for packet %s" % (time.asctime( time.localtime(time.time()) ),lastpacket))
+        if lastpacket > 60:
+            if lastpacket > (60 * lpminutes):
+                display.fill(0)
+                display.text("No RX in %s min" % lpminutes, 0, 0, 1)
+                print("No packets received in %s minutes" % lpminutes)
+                lpminutes = lpminutes + 1
+                display.show()
+        lastpacket = lastpacket + 1
     else:
+        rssi = rfm9x.rssi
+        lastpacket = 0
+        lpminutes = 1
         # Display the packet text and rssi
         display.fill(0)
         prev_packet = packet
-        try: 
+        try:
             packet_text = str(prev_packet, "utf-8")
         except:
             print("failed to read packet string")
         #print(packet_text)
         time.sleep(3)
-        match = re.search(r'(NODE\d) -?(\d+) RSSI (-?\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) .*', packet_text)
+        # NODE1 1700 RSSI 0 Location 44.8857 -93.1373 309.30 at 2:19:52 satellites 7 quality 1
+        # NODE1 1687 RSSI 0 GPS no fix
+        match = re.search(r'(NODE\d) -?(\d+) RSSI (-?\d+) Location (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+) at (\d{1,2}:\d{1,2}:\d{1,2}) satellites (\d+) .*', packet_text)
         if match:
             lat = float(match.group(4))
             lon = float(match.group(5))
             ele = float(match.group(6))
-            rssi = rfm9x.rssi
+            sats = int(match.group(8))
             name = "%s-%s-%s" % (rssi, match.group(2), match.group(7))
             locdata = {
                 "lat" : lat,
@@ -122,6 +144,7 @@ while True:
             # Send location data to Adafruit IO
             aio.send(location.key, name, locdata)
             aio.send(rssifeed.key, rssi)
+            aio.send(satfeed.key, sats)
 
             # Read the location data back from IO
             #print('\nData Received by Adafruit IO Feed:\n')
@@ -129,11 +152,12 @@ while True:
             #print('\tValue: {0}\n\tLat: {1}\n\tLon: {2}\n\tEle: {3}'
             #  .format(data.value, data.lat, data.lon, data.ele))
         else:
-            match = re.search(r'(NODE\d) - (\d+) RSSI (-\d+) GPS no fix', packet_text)
+            print(packet_text)
+            match = re.search(r'(NODE\d) (\d+) RSSI (-?\d+) GPS no fix', packet_text)
             if match:
-                    rssi = march.group(3)
                     aio.send(rssifeed.key, rssi)
                     data = aio.receive(rssifeed.key)
-                    print('\Rssi: {0}'.format(data.rssi))
+                    print("Sent RSSI: %s" % rssi)
+                    aio.send(satfeed.key, 0)
     display.show()
     time.sleep(0.1)
