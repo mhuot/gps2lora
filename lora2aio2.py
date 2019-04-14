@@ -87,6 +87,7 @@ RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
 rfm9x.tx_power = 23
+rfm9x.spreading_factor = 7
 prev_packet = None
 lastpacket = 0
 lpminutes = 1
