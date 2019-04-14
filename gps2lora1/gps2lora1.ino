@@ -125,6 +125,9 @@ void loop()
     String gpshour = String(GPS.hour);
     String gpsminute = String(GPS.minute);
     String gpsseconds = String(GPS.seconds);
+    String gpsday = GPS.day;
+    String GPS.month;
+    String GPS.year;
     String gpssatellites = String(GPS.satellites);
     String gpsquality = String(GPS.fixquality);
     String rssi = String(rf95.lastRssi(), DEC);
@@ -132,6 +135,15 @@ void loop()
     String message = String(nodename + " GPS Fail " + String(fixattempt)+ " RSSI " + rssi);
     String displaytext = message;
 
+    if (gpshour.length() =1) {
+      gpshour = "0" + gpshour
+    }
+    if (gpsminute.length() =1) {
+      gpsminute = "0" + gpsminute
+    }
+    if (gpsseconds.length() =1) {
+      gpsseconds = "0" + gpsseconds
+    }
     if (GPS.fix) {
       message = String(nodename + " " + packet + " RSSI " + rssi + " Location " + latdegrees + " " + longdegrees + " " + gpsalt + " at " + gpshour + ":" + gpsminute + ":" + gpsseconds + " satellites " + gpssatellites + " quality " + gpsquality);
       fixattempt = 0;

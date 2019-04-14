@@ -68,11 +68,18 @@ try:
 except RequestError: # Doesn't exist, create a new feed
     rssifeed = aio.create_feed(Feed(name='rssi'))
 
-# Assign a rssi feed, if one exists already
+# Assign a satellites feed, if one exists already
 try:
     satfeed = aio.feeds('satellites')
 except RequestError: # Doesn't exist, create a new feed
     satfeed = aio.create_feed(Feed(name='satellites'))
+
+# Assign a lpminutes feed, if one exists already
+try:
+    lpminutesfeed = aio.feeds('lpminutes')
+except RequestError: # Doesn't exist, create a new feed
+    lpminutesfeed = aio.create_feed(Feed(name='lpminutes'))
+    aio.send(lpminutesfeed.key, 0)
 
 # Configure LoRa Radio
 CS = DigitalInOut(board.CE1)
@@ -104,19 +111,26 @@ while True:
                 display.text("No RX in %s min" % lpminutes, 0, 0, 1)
                 print("No packets received in %s minutes" % lpminutes)
                 lpminutes = lpminutes + 1
+                aio.send(lpminutesfeed.key, lpminutes)
                 display.show()
         lastpacket = lastpacket + 1
     else:
         rssi = rfm9x.rssi
         lastpacket = 0
-        lpminutes = 1
+        if (lpminutes > 1):
+            lpminutes = 1
+            aio.send(lpminutesfeed.key, 0)
         # Display the packet text and rssi
         display.fill(0)
         prev_packet = packet
         try:
             packet_text = str(prev_packet, "utf-8")
         except:
-            print("failed to read packet string")
+            print("Failed to read packet string - RSSI: %s" % rssi)
+            display.fill(0)
+            display.text("Failed to read packet string - RSSI: %s" % rssi, 0, 0, 1)
+            display.show()
+            continue
         #print(packet_text)
         time.sleep(3)
         # NODE1 1700 RSSI 0 Location 44.8857 -93.1373 309.30 at 2:19:52 satellites 7 quality 1
@@ -127,7 +141,9 @@ while True:
             lon = float(match.group(5))
             ele = float(match.group(6))
             sats = int(match.group(8))
-            name = "%s-%s-%s" % (rssi, match.group(2), match.group(7))
+            rawtime = match.group(7).split(":")
+            utctime = "%s:%s:%s" % (rawtime[0].rjust(2,"0"),rawtime[1].rjust(2,"0"),rawtime[2].rjust(2,"0"))
+            name = "%s-%s-%s" % (rssi, match.group(2), utctime)
             locdata = {
                 "lat" : lat,
                 "lon" : lon,
@@ -137,7 +153,7 @@ while True:
 
             locjson = json.dumps(locdata)
 
-            #print("RSSI: %s - %s" % (rssi,locjson))
+            print("RSSI: %s - %s" % (rssi,locjson))
 
             display.text('RX: ', 0, 0, 1)
             display.text("RSSI: %s" % rssi, 25, 0, 1)
@@ -153,6 +169,9 @@ while True:
             #  .format(data.value, data.lat, data.lon, data.ele))
         else:
             print(packet_text)
+            display.fill(0)
+            display.text("Failed to read packet string - RSSI: %s" % rssi, 0, 0, 1)
+            display.show()
             match = re.search(r'(NODE\d) (\d+) RSSI (-?\d+) GPS no fix', packet_text)
             if match:
                     aio.send(rssifeed.key, rssi)
